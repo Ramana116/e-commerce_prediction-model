@@ -15,10 +15,10 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (userSessions.length > 0) {
+    if (userSessions.length > 0 && !selectedUserId) {
       setSelectedUserId(userSessions[0].userId);
     }
-  }, [userSessions]);
+  }, [userSessions, selectedUserId]);
   
   const handleFetchRecommendations = useCallback(async () => {
     if (!selectedUserId) return;
@@ -36,20 +36,15 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
     }
   }, [selectedUserId, userSessions, products]);
   
-  useEffect(() => {
-    // Automatically fetch recommendations when user changes
-    if (selectedUserId) {
-        handleFetchRecommendations();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedUserId]);
-
   return (
     <div>
       <div className="flex flex-wrap items-center gap-4 mb-4">
         <select
           value={selectedUserId}
-          onChange={(e) => setSelectedUserId(e.target.value)}
+          onChange={(e) => {
+            setSelectedUserId(e.target.value)
+            setRecommendations([])
+          }}
           className="bg-background border border-border-color rounded-md px-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
         >
           {userSessions.map(session => (
@@ -58,6 +53,13 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
             </option>
           ))}
         </select>
+        <button
+          onClick={handleFetchRecommendations}
+          disabled={loading || !selectedUserId}
+          className="bg-primary hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
+        >
+          {loading ? 'Generating...' : 'Get Recommendations'}
+        </button>
       </div>
       {loading ? (
         <div className="flex flex-col items-center justify-center h-24">
@@ -75,7 +77,7 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
               </div>
             ))
           ) : (
-            <p className="text-text-secondary col-span-3">No recommendations to display. Select a user and generate.</p>
+            <p className="text-text-secondary col-span-3">Please click "Get Recommendations" to see suggestions.</p>
           )}
         </div>
       )}

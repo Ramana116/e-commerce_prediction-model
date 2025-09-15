@@ -38,7 +38,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     updateData(); // Initial data load
-    const interval = setInterval(updateData, 5000); // Simulate real-time updates every 5 seconds
+    const interval = setInterval(updateData, 20000); // Simulate real-time updates every 20 seconds
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

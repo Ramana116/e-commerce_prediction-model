@@ -12,15 +12,35 @@ const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 const geminiFlash = 'gemini-2.5-flash';
 
-// Utility to handle API call with retries
-async function safeApiCall<T,>(apiCall: () => Promise<T>): Promise<T | null> {
-  try {
-    return await apiCall();
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return null;
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Utility to handle API call with retries and exponential backoff
+async function safeApiCall<T,>(
+  apiCall: () => Promise<T>,
+  maxRetries = 3,
+  initialDelay = 2000
+): Promise<T | null> {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await apiCall();
+    } catch (error) {
+      const errorString = JSON.stringify(error) || error.toString();
+      const isRateLimitError = errorString.includes('429') || errorString.toLowerCase().includes('rate limit');
+
+      if (isRateLimitError && attempt < maxRetries) {
+        const waitTime = initialDelay * Math.pow(2, attempt - 1); // Exponential backoff
+        console.warn(`Gemini API rate limit hit. Retrying in ${waitTime / 1000}s... (Attempt ${attempt})`);
+        await delay(waitTime);
+      } else {
+        console.error("Gemini API Error:", error);
+        return null; 
+      }
+    }
   }
+  console.error("Gemini API call failed after max retries.");
+  return null;
 }
+
 
 export const analyzeSentiment = async (reviews: Review[]) => {
   return safeApiCall(async () => {
@@ -28,11 +48,11 @@ export const analyzeSentiment = async (reviews: Review[]) => {
 
     const prompt = `
       Analyze the sentiment of the following e-commerce product reviews.
-      Classify each review as 'positive', 'neutral', or 'negative'.
-      Provide a count for each sentiment category.
-      Also, provide a brief, actionable summary of the overall customer feedback (2-3 sentences).
+      For each review, classify it as 'positive', 'neutral', or 'negative'.
+      Return an array of objects, where each object contains the original review text and its classification.
+      Finally, provide a total count for each sentiment category and a brief, actionable summary (2-3 sentences) of the overall customer feedback.
 
-      Reviews:
+      Reviews to analyze:
       ${reviews.map(r => `- "${r.text}"`).join('\n')}
     `;
 
@@ -44,10 +64,21 @@ export const analyzeSentiment = async (reviews: Review[]) => {
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            positive: { type: Type.INTEGER, description: "Count of positive reviews." },
-            neutral: { type: Type.INTEGER, description: "Count of neutral reviews." },
-            negative: { type: Type.INTEGER, description: "Count of negative reviews." },
+            positive: { type: Type.INTEGER, description: "Total count of positive reviews." },
+            neutral: { type: Type.INTEGER, description: "Total count of neutral reviews." },
+            negative: { type: Type.INTEGER, description: "Total count of negative reviews." },
             summary: { type: Type.STRING, description: "Actionable summary of feedback." },
+            analysis: {
+              type: Type.ARRAY,
+              description: "An array containing the sentiment analysis for each individual review.",
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  reviewText: { type: Type.STRING, description: "The original text of the review." },
+                  sentiment: { type: Type.STRING, description: "The classified sentiment: 'positive', 'neutral', or 'negative'." }
+                }
+              }
+            }
           },
         },
       },

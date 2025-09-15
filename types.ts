@@ -1,4 +1,3 @@
-
 export interface Product {
   id: string;
   name: string;
@@ -34,11 +33,17 @@ export interface UserSession {
   };
 }
 
+export interface AnalyzedReview {
+  reviewText: string;
+  sentiment: 'positive' | 'neutral' | 'negative';
+}
+
 export interface SentimentData {
   positive: number;
   neutral: number;
   negative: number;
   summary: string;
+  analysis: AnalyzedReview[];
 }
 
 export interface ForecastDataPoint {
