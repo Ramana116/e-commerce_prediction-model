@@ -1,18 +1,24 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { getRecommendations } from '../services/geminiService';
-import type { Product, UserSession } from '../types';
+import type { Product, UserSession, Sale } from '../types';
 import { LoadingSpinner } from './LoadingSpinner';
 
 interface ProductRecommendationProps {
   products: Product[];
   userSessions: UserSession[];
+  sales: Sale[];
 }
 
-export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ products, userSessions }) => {
+interface DisplayRecommendation {
+  product: Product;
+  justification: string;
+}
+
+export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ products, userSessions, sales }) => {
   const [selectedUserId, setSelectedUserId] = useState<string>('');
-  const [recommendations, setRecommendations] = useState<Product[]>([]);
+  const [recommendations, setRecommendations] = useState<DisplayRecommendation[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (userSessions.length > 0 && !selectedUserId) {
@@ -26,15 +32,24 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
     const userSession = userSessions.find(u => u.userId === selectedUserId);
     if (userSession) {
       setLoading(true);
+      setError(null);
       setRecommendations([]);
-      const recommendedIds = await getRecommendations(userSession, products);
-      if (recommendedIds) {
-        const recommendedProducts = products.filter(p => recommendedIds.includes(p.id));
+      const recommendedItems = await getRecommendations(userSession, products, userSessions, sales);
+      if (recommendedItems) {
+        const recommendedProducts = recommendedItems
+          .map(rec => {
+              const product = products.find(p => p.id === rec.productId);
+              return product ? { product, justification: rec.justification } : null;
+          })
+          .filter((item): item is DisplayRecommendation => item !== null);
+        
         setRecommendations(recommendedProducts);
+      } else {
+        setError("Could not generate recommendations. Please try again.");
       }
       setLoading(false);
     }
-  }, [selectedUserId, userSessions, products]);
+  }, [selectedUserId, userSessions, products, sales]);
   
   return (
     <div>
@@ -44,6 +59,7 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
           onChange={(e) => {
             setSelectedUserId(e.target.value)
             setRecommendations([])
+            setError(null);
           }}
           className="bg-background border border-border-color rounded-md px-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
         >
@@ -62,22 +78,27 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
         </button>
       </div>
       {loading ? (
-        <div className="flex flex-col items-center justify-center h-24">
+        <div className="flex flex-col items-center justify-center h-40">
           <LoadingSpinner />
            <p className="text-text-secondary mt-2">Generating recommendations...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {recommendations.length > 0 ? (
-            recommendations.map(product => (
-              <div key={product.id} className="bg-background border border-border-color p-4 rounded-lg">
-                <h4 className="font-semibold text-primary">{product.name}</h4>
-                <p className="text-sm text-text-secondary">{product.category}</p>
-                <p className="text-lg font-bold mt-2">${product.price.toFixed(2)}</p>
+            recommendations.map(({ product, justification }) => (
+              <div key={product.id} className="bg-background border border-border-color p-4 rounded-lg flex flex-col justify-between">
+                <div>
+                  <h4 className="font-semibold text-primary">{product.name}</h4>
+                  <p className="text-sm text-text-secondary">{product.category}</p>
+                  <p className="text-lg font-bold mt-2">${product.price.toFixed(2)}</p>
+                </div>
+                <p className="text-xs text-text-secondary italic mt-3 pt-2 border-t border-border-color">"{justification}"</p>
               </div>
             ))
           ) : (
-            <p className="text-text-secondary col-span-3">Please click "Get Recommendations" to see suggestions.</p>
+            <p className="text-text-secondary col-span-3">
+              {error ? error : 'Please click "Get Recommendations" to see suggestions.'}
+            </p>
           )}
         </div>
       )}

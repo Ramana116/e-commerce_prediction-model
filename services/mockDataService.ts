@@ -49,7 +49,7 @@ const generateSales = (products: Product[], count: number): Sale[] => {
       productId: product.id,
       quantity: Math.floor(Math.random() * 3) + 1,
       price: product.price,
-      timestamp: new Date(Date.now() - Math.floor(Math.random() * 30) * 24 * 60 * 60 * 1000),
+      timestamp: new Date(Date.now() - Math.floor(Math.random() * 365) * 24 * 60 * 60 * 1000),
     };
   });
 };
@@ -64,13 +64,14 @@ const generateUserSessions = (products: Product[], count: number): UserSession[]
       age: Math.floor(Math.random() * (65 - 18) + 18),
       location: LOCATIONS[Math.floor(Math.random() * LOCATIONS.length)],
     },
+    timestamp: new Date(Date.now() - Math.floor(Math.random() * 365) * 24 * 60 * 60 * 1000),
   }));
 };
 
 let products = generateProducts(10);
 let reviews = generateReviews(products, 50);
-let sales = generateSales(products, 100);
-let userSessions = generateUserSessions(products, 50);
+let sales = generateSales(products, 1000);
+let userSessions = generateUserSessions(products, 500);
 
 const getUpdatedData = () => {
     // Simulate a new event
@@ -86,7 +87,7 @@ const getUpdatedData = () => {
             price: product.price,
             timestamp: new Date(),
         };
-        sales = [newSale, ...sales].slice(0, 200);
+        sales = [newSale, ...sales].slice(0, 2000);
         activity = { id: newSale.id, type: 'sale', description: `Sale of ${product.name}`, timestamp: new Date() };
     } else if (eventType < 0.8) { // New Review
         const newReview = {

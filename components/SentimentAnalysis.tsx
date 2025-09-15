@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { analyzeSentiment } from '../services/geminiService';
@@ -140,7 +141,7 @@ export const SentimentAnalysis: React.FC<SentimentAnalysisProps> = ({ reviews })
             )}
         </div>
 
-        <div className="space-y-3 pr-2 overflow-y-auto flex-grow h-48">
+        <div className="space-y-3 pr-2 overflow-y-auto flex-grow h-40 sm:h-48">
             {filteredReviews.length > 0 ? filteredReviews.map((review, index) => (
                 <div key={index} className="flex items-start space-x-3 text-sm">
                     <div className="flex-shrink-0 mt-1">{SENTIMENT_ICONS[review.sentiment]}</div>

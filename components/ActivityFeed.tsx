@@ -24,7 +24,7 @@ const formatTimeAgo = (date: Date) => {
 
 export const ActivityFeed: React.FC<ActivityFeedProps> = ({ activities }) => {
     return (
-        <div className="space-y-4 h-[400px] overflow-y-auto pr-2">
+        <div className="space-y-4 overflow-y-auto pr-2 flex-1">
             {activities.length > 0 ? activities.map(activity => (
                 <div key={activity.id} className="flex items-start space-x-3">
                     <div className="flex-shrink-0 mt-1">{ICONS[activity.type]}</div>

@@ -78,12 +78,12 @@ export const DynamicPricing: React.FC<DynamicPricingProps> = ({ products }) => {
       ) : (
         result && selectedProduct && (
           <div className="bg-background border border-border-color p-4 rounded-lg">
-            <div className="flex justify-between items-center">
-                <div>
+            <div className="flex flex-col sm:flex-row justify-between gap-4 sm:gap-2">
+                <div className="text-left">
                     <h4 className="font-semibold text-text-primary">AI Pricing Suggestion for {selectedProduct.name}</h4>
                     <p className="text-sm text-text-secondary">Current Price: ${selectedProduct.price.toFixed(2)}</p>
                 </div>
-                 <div className="text-right">
+                 <div className="text-left sm:text-right">
                     <p className="text-2xl font-bold text-secondary">${result.optimalPrice.toFixed(2)}</p>
                     <p className="text-sm text-secondary">Optimal Price</p>
                 </div>

@@ -31,6 +31,7 @@ export interface UserSession {
     age: number;
     location: string;
   };
+  timestamp: Date;
 }
 
 export interface AnalyzedReview {
@@ -56,4 +57,9 @@ export interface Activity {
   type: 'sale' | 'review' | 'view';
   description: string;
   timestamp: Date;
+}
+
+export interface RecommendationResult {
+  productId: string;
+  justification: string;
 }

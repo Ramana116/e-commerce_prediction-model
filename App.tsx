@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Header } from './components/Header';
 import { DashboardCard } from './components/DashboardCard';
@@ -9,6 +8,7 @@ import { DynamicPricing } from './components/DynamicPricing';
 import { DemandForecast } from './components/DemandForecast';
 import { TopProducts } from './components/TopProducts';
 import { ActivityFeed } from './components/ActivityFeed';
+import { HistoricalTrends } from './components/HistoricalTrends';
 import { mockDataService } from './services/mockDataService';
 import type { Review, Product, Sale, UserSession, Activity } from './types';
 import { TrendingUp, Users, ShoppingCart, DollarSign } from 'lucide-react';
@@ -61,29 +61,37 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-background text-text-primary font-sans">
       <Header />
       <main className="p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {memoizedKpis.map(kpi => <KpiCard key={kpi.title} {...kpi} />)}
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <DashboardCard title="Real-Time Customer Sentiment">
-              <SentimentAnalysis reviews={reviews} />
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Main Content Column */}
+          <div className="w-full lg:w-3/5 flex flex-col gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <DashboardCard title="Real-Time Customer Sentiment">
+                <SentimentAnalysis reviews={reviews} />
+              </DashboardCard>
+              <DashboardCard title="Inventory & Demand Forecast">
+                <DemandForecast sales={sales} />
+              </DashboardCard>
+            </div>
+            <DashboardCard title="Historical Performance Trends">
+              <HistoricalTrends sales={sales} userSessions={userSessions} />
             </DashboardCard>
-            <DashboardCard title="Inventory & Demand Forecast">
-              <DemandForecast sales={sales} />
+            <DashboardCard title="Predictive Product Recommendation">
+              <ProductRecommendation products={products} userSessions={userSessions} sales={sales} />
             </DashboardCard>
-            <DashboardCard title="Predictive Product Recommendation" className="md:col-span-2">
-              <ProductRecommendation products={products} userSessions={userSessions} />
-            </DashboardCard>
-            <DashboardCard title="Dynamic Pricing Optimization" className="md:col-span-2">
+            <DashboardCard title="Dynamic Pricing Optimization">
               <DynamicPricing products={products} />
             </DashboardCard>
           </div>
-          <div className="lg:col-span-1 flex flex-col gap-6">
+
+          {/* Sidebar Column */}
+          <div className="w-full lg:w-2/5 flex flex-col gap-6">
             <DashboardCard title="Top Selling Products">
               <TopProducts sales={sales} products={products} />
             </DashboardCard>
-            <DashboardCard title="Live Activity Feed">
+            <DashboardCard title="Live Activity Feed" className="flex-grow flex flex-col">
               <ActivityFeed activities={activities} />
             </DashboardCard>
           </div>
