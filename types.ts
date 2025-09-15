@@ -1,0 +1,54 @@
+
+export interface Product {
+  id: string;
+  name: string;
+  category: string;
+  price: number;
+  stock: number;
+}
+
+export interface Review {
+  id: string;
+  productId: string;
+  userId: string;
+  rating: number;
+  text: string;
+}
+
+export interface Sale {
+  id: string;
+  productId: string;
+  quantity: number;
+  price: number;
+  timestamp: Date;
+}
+
+export interface UserSession {
+  sessionId: string;
+  userId: string;
+  viewedProducts: string[];
+  purchasedProducts: string[];
+  demographics: {
+    age: number;
+    location: string;
+  };
+}
+
+export interface SentimentData {
+  positive: number;
+  neutral: number;
+  negative: number;
+  summary: string;
+}
+
+export interface ForecastDataPoint {
+  date: string;
+  forecast: number;
+}
+
+export interface Activity {
+  id: string;
+  type: 'sale' | 'review' | 'view';
+  description: string;
+  timestamp: Date;
+}
