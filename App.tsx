@@ -60,34 +60,34 @@ const App: React.FC = () => {
   return (
     <div className="min-h-screen bg-background text-text-primary font-sans">
       <Header />
-      <main className="p-4 sm:p-6 lg:p-8">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <main className="p-6 sm:p-8 lg:p-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
           {memoizedKpis.map(kpi => <KpiCard key={kpi.title} {...kpi} />)}
         </div>
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content Column */}
-          <div className="w-full lg:w-3/5 flex flex-col gap-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <DashboardCard title="Real-Time Customer Sentiment">
-                <SentimentAnalysis reviews={reviews} />
-              </DashboardCard>
-              <DashboardCard title="Inventory & Demand Forecast">
-                <DemandForecast sales={sales} />
-              </DashboardCard>
-            </div>
+          <div className="w-full lg:w-3/5 flex flex-col gap-8">
             <DashboardCard title="Historical Performance Trends">
               <HistoricalTrends sales={sales} userSessions={userSessions} />
             </DashboardCard>
-            <DashboardCard title="Predictive Product Recommendation">
-              <ProductRecommendation products={products} userSessions={userSessions} sales={sales} />
-            </DashboardCard>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <DashboardCard title="Real-Time Customer Sentiment">
+                <SentimentAnalysis reviews={reviews} products={products} />
+              </DashboardCard>
+              <DashboardCard title="Inventory & Demand Hub">
+                <DemandForecast sales={sales} products={products} />
+              </DashboardCard>
+            </div>
             <DashboardCard title="Dynamic Pricing Optimization">
               <DynamicPricing products={products} />
             </DashboardCard>
           </div>
 
           {/* Sidebar Column */}
-          <div className="w-full lg:w-2/5 flex flex-col gap-6">
+          <div className="w-full lg:w-2/5 flex flex-col gap-8">
+             <DashboardCard title="Predictive Product Recommendation">
+              <ProductRecommendation products={products} userSessions={userSessions} sales={sales} />
+            </DashboardCard>
             <DashboardCard title="Top Selling Products">
               <TopProducts sales={sales} products={products} />
             </DashboardCard>

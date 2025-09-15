@@ -6,20 +6,26 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>E-commerce AI Analytics Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
         theme: {
           extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
             colors: {
-              background: '#111827',
-              surface: '#1f2937',
-              primary: '#3b82f6',
-              secondary: '#10b981',
-              tertiary: '#f97316',
-              'text-primary': '#f9fafb',
-              'text-secondary': '#d1d5db',
-              'border-color': '#374151',
+              background: '#0f172a', // slate-900
+              surface: '#1e293b',    // slate-800
+              primary: '#60a5fa',   // blue-400
+              secondary: '#34d399', // emerald-400
+              tertiary: '#fb923c',  // orange-400
+              'text-primary': '#f1f5f9',    // slate-100
+              'text-secondary': '#94a3b8', // slate-400
+              'border-color': '#334155',   // slate-700
             },
             animation: {
               'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -41,7 +47,7 @@
 }
 </script>
 </head>
-  <body class="bg-background text-text-primary">
+  <body class="bg-background text-text-primary font-sans">
     <div id="root"></div>
     <script type="module" src="/index.tsx"></script>
   </body>

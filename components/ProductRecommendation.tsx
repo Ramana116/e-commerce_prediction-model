@@ -61,7 +61,7 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
             setRecommendations([])
             setError(null);
           }}
-          className="bg-background border border-border-color rounded-md px-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
+          className="bg-surface border border-border-color rounded-lg px-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none flex-grow transition"
         >
           {userSessions.map(session => (
             <option key={session.userId} value={session.userId}>
@@ -72,7 +72,7 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
         <button
           onClick={handleFetchRecommendations}
           disabled={loading || !selectedUserId}
-          className="bg-primary hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
+          className="bg-primary hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-600 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform"
         >
           {loading ? 'Generating...' : 'Get Recommendations'}
         </button>
@@ -86,7 +86,7 @@ export const ProductRecommendation: React.FC<ProductRecommendationProps> = ({ pr
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
           {recommendations.length > 0 ? (
             recommendations.map(({ product, justification }) => (
-              <div key={product.id} className="bg-background border border-border-color p-4 rounded-lg flex flex-col justify-between">
+              <div key={product.id} className="bg-background border border-border-color p-4 rounded-lg flex flex-col justify-between transition-all hover:border-primary/50">
                 <div>
                   <h4 className="font-semibold text-primary">{product.name}</h4>
                   <p className="text-sm text-text-secondary">{product.category}</p>

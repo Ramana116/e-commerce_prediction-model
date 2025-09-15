@@ -45,12 +45,28 @@ export interface SentimentData {
   negative: number;
   summary: string;
   analysis: AnalyzedReview[];
+  keyTopics: {
+    positive: string[];
+    negative: string[];
+  };
+  sentimentTrend: {
+    date: string;
+    positivePercentage: number;
+  }[];
 }
 
 export interface ForecastDataPoint {
   date: string;
   forecast: number;
 }
+
+export interface ProductForecastResult {
+  forecast: ForecastDataPoint[];
+  status: 'Healthy' | 'Watch' | 'Alert';
+  recommendation: string;
+  totalForecast: number;
+}
+
 
 export interface Activity {
   id: string;

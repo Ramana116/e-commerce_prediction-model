@@ -11,18 +11,18 @@ type Timeframe = '30d' | '6m' | '1y';
 type Metric = 'revenue' | 'sales' | 'users';
 
 const METRIC_CONFIG = {
-    revenue: { name: 'Revenue', color: '#3b82f6', formatter: (value: number) => value > 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toLocaleString()}`},
-    sales: { name: 'Sales Volume', color: '#10b981', formatter: (value: number) => value.toLocaleString() },
-    users: { name: 'Active Users', color: '#f97316', formatter: (value: number) => value.toLocaleString() },
+    revenue: { name: 'Revenue', color: '#60a5fa', formatter: (value: number) => value > 1000 ? `$${(value / 1000).toFixed(0)}k` : `$${value.toLocaleString()}`},
+    sales: { name: 'Sales', color: '#34d399', formatter: (value: number) => value.toLocaleString() },
+    users: { name: 'Users', color: '#fb923c', formatter: (value: number) => value.toLocaleString() },
 };
 
 const ChartButton: React.FC<{ label: string; isActive: boolean; onClick: () => void }> = ({ label, isActive, onClick }) => (
     <button
         onClick={onClick}
-        className={`px-3 py-1 text-xs rounded-md transition-colors ${
+        className={`px-3 py-1.5 text-xs rounded-md transition-colors text-nowrap ${
             isActive
-                ? 'bg-primary text-white font-semibold shadow-md'
-                : 'bg-surface hover:bg-border-color text-text-secondary'
+                ? 'bg-primary text-white font-semibold shadow'
+                : 'hover:bg-surface text-text-secondary'
         }`}
     >
         {label}
@@ -100,7 +100,7 @@ export const HistoricalTrends: React.FC<HistoricalTrendsProps> = ({ sales, userS
         return Object.keys(aggregatedData)
             .map(key => ({
                 date: new Date(key),
-                value: aggregatedData[key][metric] || 0,
+                value: metric === 'users' ? aggregatedData[key].users.size : (aggregatedData[key][metric] || 0),
             }))
             .sort((a, b) => a.date.getTime() - b.date.getTime())
             .map(item => ({
@@ -115,7 +115,7 @@ export const HistoricalTrends: React.FC<HistoricalTrendsProps> = ({ sales, userS
     return (
         <div className="h-[400px] w-full flex flex-col">
             <div className="flex flex-wrap justify-between items-center mb-4 gap-4">
-                <div className="flex items-center gap-2 p-1 bg-surface rounded-lg">
+                <div className="flex items-center gap-2 p-1 bg-background rounded-lg border border-border-color">
                     {Object.keys(METRIC_CONFIG).map((m) => (
                         <ChartButton
                             key={m}
@@ -125,7 +125,7 @@ export const HistoricalTrends: React.FC<HistoricalTrendsProps> = ({ sales, userS
                         />
                     ))}
                 </div>
-                 <div className="flex items-center gap-2 p-1 bg-surface rounded-lg">
+                 <div className="flex items-center gap-2 p-1 bg-background rounded-lg border border-border-color">
                     <ChartButton label="30 Days" isActive={timeframe === '30d'} onClick={() => setTimeframe('30d')} />
                     <ChartButton label="6 Months" isActive={timeframe === '6m'} onClick={() => setTimeframe('6m')} />
                     <ChartButton label="1 Year" isActive={timeframe === '1y'} onClick={() => setTimeframe('1y')} />
@@ -143,15 +143,15 @@ export const HistoricalTrends: React.FC<HistoricalTrendsProps> = ({ sales, userS
                                 <stop offset="95%" stopColor={currentMetricConfig.color} stopOpacity={0}/>
                             </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                        <XAxis dataKey="date" stroke="#d1d5db" tick={{ fontSize: 12 }} dy={5} />
-                        <YAxis stroke="#d1d5db" tick={{ fontSize: 12 }} tickFormatter={currentMetricConfig.formatter} />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 12, fill: '#94a3b8' }} dy={5} />
+                        <YAxis stroke="#94a3b8" tick={{ fontSize: 12, fill: '#94a3b8' }} tickFormatter={currentMetricConfig.formatter} />
                         <Tooltip
                             contentStyle={{
-                                backgroundColor: '#1f2937',
-                                borderColor: '#374151',
+                                backgroundColor: '#1e293b',
+                                borderColor: '#334155',
                                 borderRadius: '0.5rem',
-                                color: '#f9fafb'
+                                color: '#f1f5f9'
                             }}
                             labelStyle={{ fontWeight: 'bold', marginBottom: '4px' }}
                             formatter={(value: number) => [currentMetricConfig.formatter(value), currentMetricConfig.name]}

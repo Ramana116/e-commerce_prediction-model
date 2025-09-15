@@ -13,6 +13,7 @@ type DemandSignal = 'High' | 'Medium' | 'Low';
 export const DynamicPricing: React.FC<DynamicPricingProps> = ({ products }) => {
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [demandSignal, setDemandSignal] = useState<DemandSignal>('Medium');
+  const [competitorPrice, setCompetitorPrice] = useState<string>('');
   const [result, setResult] = useState<{ optimalPrice: number; justification: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -29,13 +30,19 @@ export const DynamicPricing: React.FC<DynamicPricingProps> = ({ products }) => {
     if (product) {
       setLoading(true);
       setResult(null);
-      // Simulate competitor prices
+      
+      // Simulate competitor prices, and add user-provided one if available
       const competitorPrices = [product.price * 0.95, product.price * 1.02, product.price * 1.1];
+      const userPrice = parseFloat(competitorPrice);
+      if (!isNaN(userPrice) && userPrice > 0) {
+        competitorPrices.push(userPrice);
+      }
+
       const data = await getOptimalPrice(product, competitorPrices, demandSignal);
       setResult(data);
       setLoading(false);
     }
-  }, [selectedProductId, products, demandSignal]);
+  }, [selectedProductId, products, demandSignal, competitorPrice]);
 
   const selectedProduct = products.find(p => p.id === selectedProductId);
 
@@ -44,8 +51,12 @@ export const DynamicPricing: React.FC<DynamicPricingProps> = ({ products }) => {
       <div className="flex flex-wrap items-center gap-4 mb-4">
         <select
           value={selectedProductId}
-          onChange={(e) => setSelectedProductId(e.target.value)}
-          className="bg-background border border-border-color rounded-md px-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none flex-grow"
+          onChange={(e) => {
+            setSelectedProductId(e.target.value);
+            setResult(null);
+            setCompetitorPrice('');
+          }}
+          className="bg-surface border border-border-color rounded-lg px-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none flex-grow transition"
         >
           {products.map(product => (
             <option key={product.id} value={product.id}>
@@ -56,16 +67,27 @@ export const DynamicPricing: React.FC<DynamicPricingProps> = ({ products }) => {
         <select
           value={demandSignal}
           onChange={(e) => setDemandSignal(e.target.value as DemandSignal)}
-          className="bg-background border border-border-color rounded-md px-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none"
+          className="bg-surface border border-border-color rounded-lg px-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:outline-none transition"
         >
           <option value="High">High Demand</option>
           <option value="Medium">Medium Demand</option>
           <option value="Low">Low Demand</option>
         </select>
+        <div className="relative">
+          <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-text-secondary" aria-hidden="true">$</span>
+          <input
+            type="number"
+            value={competitorPrice}
+            onChange={(e) => setCompetitorPrice(e.target.value)}
+            placeholder="Competitor Price"
+            className="bg-surface border border-border-color rounded-lg w-44 pl-7 pr-3 py-2 text-text-primary focus:ring-2 focus:ring-primary focus:border-primary focus:outline-none transition"
+            aria-label="Competitor's Price"
+          />
+        </div>
         <button
           onClick={handleFetchPrice}
-          disabled={loading}
-          className="bg-primary hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-md disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors"
+          disabled={loading || !selectedProductId}
+          className="bg-primary hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg disabled:bg-slate-600 disabled:cursor-not-allowed transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 transform"
         >
           {loading ? 'Optimizing...' : 'Optimize Price'}
         </button>
@@ -84,8 +106,8 @@ export const DynamicPricing: React.FC<DynamicPricingProps> = ({ products }) => {
                     <p className="text-sm text-text-secondary">Current Price: ${selectedProduct.price.toFixed(2)}</p>
                 </div>
                  <div className="text-left sm:text-right">
-                    <p className="text-2xl font-bold text-secondary">${result.optimalPrice.toFixed(2)}</p>
-                    <p className="text-sm text-secondary">Optimal Price</p>
+                    <p className="text-3xl font-bold text-secondary">${result.optimalPrice.toFixed(2)}</p>
+                    <p className="text-sm text-secondary -mt-1">Optimal Price</p>
                 </div>
             </div>
             <p className="mt-4 text-text-secondary italic">"{result.justification}"</p>

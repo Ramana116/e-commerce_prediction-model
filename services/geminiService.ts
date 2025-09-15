@@ -1,5 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import type { Review, Product, UserSession, Sale, RecommendationResult } from '../types';
+import type { Review, Product, UserSession, Sale, RecommendationResult, ProductForecastResult } from '../types';
 
 if (!process.env.API_KEY) {
   // In a real app, you'd want to handle this more gracefully.
@@ -37,8 +37,8 @@ async function processApiRequestQueue() {
     }
   }
 
-  // Add a 1-second delay between processing queued requests to respect rate limits.
-  await delay(1000);
+  // Add a 2-second delay between processing queued requests to respect rate limits.
+  await delay(2000);
 
   isApiCallInFlight = false;
   // Process the next item in the queue.
@@ -52,7 +52,7 @@ async function processApiRequestQueue() {
 async function safeApiCall<T>(
   apiCall: () => Promise<T>,
   maxRetries = 5,
-  initialDelay = 5000 // Increased initial delay for more patient retries
+  initialDelay = 10000 // Increased initial delay for more patient retries
 ): Promise<T | null> {
   return new Promise<T | null>((resolve) => {
     const requestWithRetries = async () => {
@@ -87,17 +87,32 @@ async function safeApiCall<T>(
 }
 
 
-export const analyzeSentiment = async (reviews: Review[]) => {
+export const analyzeSentiment = async (reviews: Review[], product?: Product) => {
   return safeApiCall(async () => {
     if (reviews.length === 0) return null;
 
-    const prompt = `
-      Analyze the sentiment of the following e-commerce product reviews.
-      For each review, classify it as 'positive', 'neutral', or 'negative'.
-      Return an array of objects, where each object contains the original review text and its classification.
-      Finally, provide a total count for each sentiment category and a brief, actionable summary (2-3 sentences) of the overall customer feedback.
+    const productContext = product
+      ? `\n**Context: Product Analysis**
+      These reviews are specifically for the product: "${product.name}". Tailor your summary and key topic extraction to be specific to this product. For example, instead of "good battery life", say "long battery life on the ${product.name}".\n`
+      : '';
 
-      Reviews to analyze:
+    const prompt = `
+      You are a sentiment analysis expert for an e-commerce platform.
+      Analyze the sentiment of the following product reviews with a focus on actionable insights.
+      ${productContext}
+      **1. Detailed Analysis:**
+      - For each review, classify it as 'positive', 'neutral', or 'negative'.
+      - Provide a total count for each sentiment category.
+      - Write a brief, actionable summary (2-3 sentences) of the overall customer feedback.
+
+      **2. Key Topic Extraction:**
+      - Identify and extract the top 5 recurring positive keywords or short phrases (e.g., "fast shipping", "great battery life").
+      - Identify and extract the top 5 recurring negative keywords or short phrases (e.g., "too expensive", "poor quality").
+
+      **3. Trend Simulation:**
+      - Based on the overall sentiment distribution in this batch of reviews, generate a plausible 14-day trend line. This should be an array of 14 objects, each with a "date" (e.g., "Day 1", "Day 2") and a "positivePercentage" (a number between 0 and 100). The trend should reflect the sentiment mix (e.g., if sentiment is mostly positive, the trend should generally be high or increasing).
+
+      **Reviews to analyze:**
       ${reviews.map(r => `- "${r.text}"`).join('\n')}
     `;
 
@@ -109,20 +124,36 @@ export const analyzeSentiment = async (reviews: Review[]) => {
         responseSchema: {
           type: Type.OBJECT,
           properties: {
-            positive: { type: Type.INTEGER, description: "Total count of positive reviews." },
-            neutral: { type: Type.INTEGER, description: "Total count of neutral reviews." },
-            negative: { type: Type.INTEGER, description: "Total count of negative reviews." },
-            summary: { type: Type.STRING, description: "Actionable summary of feedback." },
+            positive: { type: Type.INTEGER },
+            neutral: { type: Type.INTEGER },
+            negative: { type: Type.INTEGER },
+            summary: { type: Type.STRING },
             analysis: {
               type: Type.ARRAY,
-              description: "An array containing the sentiment analysis for each individual review.",
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  reviewText: { type: Type.STRING, description: "The original text of the review." },
-                  sentiment: { type: Type.STRING, description: "The classified sentiment: 'positive', 'neutral', or 'negative'." }
+                  reviewText: { type: Type.STRING },
+                  sentiment: { type: Type.STRING }
                 }
               }
+            },
+            keyTopics: {
+                type: Type.OBJECT,
+                properties: {
+                    positive: { type: Type.ARRAY, items: { type: Type.STRING } },
+                    negative: { type: Type.ARRAY, items: { type: Type.STRING } }
+                }
+            },
+            sentimentTrend: {
+                type: Type.ARRAY,
+                items: {
+                    type: Type.OBJECT,
+                    properties: {
+                        date: { type: Type.STRING },
+                        positivePercentage: { type: Type.NUMBER }
+                    }
+                }
             }
           },
         },
@@ -141,7 +172,7 @@ export const getRecommendations = async (
 ): Promise<RecommendationResult[] | null> => {
   return safeApiCall(async () => {
     const prompt = `
-      You are an expert e-commerce recommendation engine. Your task is to provide highly personalized and context-aware product recommendations by analyzing user data and market trends.
+      You are an expert e-commerce recommendation engine. Your task is to provide highly personalized, diverse, and context-aware product recommendations by analyzing user data and market trends.
 
       **1. Target User Profile:**
       - User ID: ${userSession.userId}
@@ -160,10 +191,11 @@ export const getRecommendations = async (
         ${JSON.stringify(allUserSessions.map(s => ({ uId: s.userId, demo: s.demographics, bought: s.purchasedProducts })))}
 
       **4. Your Task & Instructions:**
-      Recommend exactly 3 products for the target user. Do not recommend products the user has already purchased. Your recommendations should be based on a synthesis of the following factors:
+      Recommend exactly 3 products for the target user. Do not recommend products the user has already purchased. Your recommendations should be based on a synthesis of the following factors, with a strong emphasis on diversity:
       - **Complementary Products:** Items that go well with the user's past purchases.
       - **Demographic Trends:** What products are popular with other users of a similar age (+/- 5 years) and the same location? Analyze the provided raw data to determine this.
       - **Overall Popularity:** What are the top-selling products overall from the recent sales data?
+      - **CRITICAL: Prioritize Diversity:** The 3 recommended products should ideally be from different product categories. For instance, after recommending a laptop, suggest items from distinct categories like 'Wearables' or 'Smart Home' instead of another computer or a closely related accessory. The goal is to broaden the user's discovery of your product range.
 
       **5. Output Format:**
       Return a JSON object. The object should have a "recommendations" key, which is an array of 3 recommendation objects. Each object must have a "productId" and a "justification". The justification must be a concise, single sentence explaining the *primary reason* for the recommendation (e.g., "Complements your purchase of Quantum Laptop.", "Trending among users in Tokyo.", "A top-selling product you might like.").
@@ -238,9 +270,17 @@ export const getOptimalPrice = async (product: Product, competitorPrices: number
   });
 };
 
-export const forecastDemand = async (salesData: Sale[]) => {
+export const forecastProductDemand = async (product: Product, salesData: Sale[]): Promise<ProductForecastResult | null> => {
     return safeApiCall(async () => {
-        if (salesData.length < 5) return null;
+        if (salesData.length < 2) {
+            // Not enough data for a meaningful forecast
+            return {
+                forecast: [],
+                status: 'Watch',
+                recommendation: 'Not enough historical sales data for an accurate forecast.',
+                totalForecast: 0
+            };
+        }
 
         const monthlySales: {[key: string]: number} = {};
         salesData.forEach(sale => {
@@ -252,13 +292,25 @@ export const forecastDemand = async (salesData: Sale[]) => {
         });
 
         const prompt = `
-            Given the following monthly sales data for a product line, forecast the total sales quantity for the next 3 months.
-            Analyze trends and seasonality in the data to make your prediction.
+            You are an inventory management and demand forecasting AI.
+            
+            **Product Details:**
+            - Name: ${product.name}
+            - Current Stock: ${product.stock} units
 
-            Historical Monthly Sales Data:
+            **Historical Monthly Sales Data:**
             ${Object.entries(monthlySales).map(([month, quantity]) => `- ${month}: ${quantity} units`).join('\n')}
             
-            Provide the forecast for the next 3 months.
+            **Your Tasks:**
+            1.  **Forecast Demand:** Forecast the total sales quantity for the next 3 months. Provide a month-by-month breakdown.
+            2.  **Analyze Stock:** Compare the total 3-month forecasted demand against the current stock level.
+            3.  **Determine Status:** Classify the current inventory status as one of the following: 'Healthy', 'Watch', or 'Alert'.
+                - 'Healthy': Stock is comfortably above the 3-month forecast.
+                - 'Watch': Stock is close to or slightly below the 3-month forecast.
+                - 'Alert': Stock is significantly below the 3-month forecast, risking a stockout.
+            4.  **Provide Recommendation:** Write a concise, one-sentence recommendation. If the status is 'Alert' or 'Watch', suggest a specific number of units to reorder to meet the forecasted demand plus a 20% safety buffer.
+
+            Provide the output in the specified JSON format.
         `;
 
         const response = await ai.models.generateContent({
@@ -275,17 +327,27 @@ export const forecastDemand = async (salesData: Sale[]) => {
                             items: {
                                 type: Type.OBJECT,
                                 properties: {
-                                    month: { type: Type.STRING, description: "The forecasted month (e.g., 'YYYY-MM')." },
-                                    predictedSales: { type: Type.INTEGER, description: "The predicted sales quantity." }
+                                    month: { type: Type.STRING },
+                                    predictedSales: { type: Type.INTEGER }
                                 }
                             }
-                        }
+                        },
+                        status: { type: Type.STRING },
+                        recommendation: { type: Type.STRING }
                     }
                 }
             }
         });
 
         const result = JSON.parse(response.text);
-        return result.forecast.map((f: { month: string; predictedSales: number }) => ({ date: f.month, forecast: f.predictedSales }));
+        const transformedForecast = result.forecast.map((f: { month: string; predictedSales: number }) => ({ date: f.month, forecast: f.predictedSales }));
+        const totalForecast = transformedForecast.reduce((sum: number, item: { forecast: number }) => sum + item.forecast, 0);
+
+        return {
+          forecast: transformedForecast,
+          status: result.status,
+          recommendation: result.recommendation,
+          totalForecast
+        };
     });
 };
